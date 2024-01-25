@@ -1,4 +1,5 @@
 #![warn(rust_2018_idioms)]
+mod parallel;
 mod tester;
 use crate::tester::Proxy;
 

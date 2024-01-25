@@ -8,6 +8,7 @@ pub struct Proxy<'a> {
 }
 
 impl<'a> Proxy<'a> {
+    const DEFAULT_TARGET_URL: &'static str = "https://httpbin.org/ip";
     pub fn new(proxy_url: &'a str) -> Result<Self, Error> {
         let proxy = reqwest::Proxy::all(proxy_url)?;
         let timeout = std::time::Duration::new(10, 0);
@@ -17,7 +18,7 @@ impl<'a> Proxy<'a> {
             .build()?;
         Ok(Proxy {
             proxy_url,
-            target_url: "https://httpbin.org/ip",
+            target_url: Self::DEFAULT_TARGET_URL,
             client,
             response: None,
         })
@@ -38,5 +39,10 @@ impl<'a> Proxy<'a> {
 
     pub async fn get_text(self) -> Result<String, Error> {
         self.response.unwrap().text().await
+    }
+
+    pub fn set_target_url(&mut self, target_url: &'a str) -> &Self {
+        self.target_url = target_url;
+        self
     }
 }
