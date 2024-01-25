@@ -23,8 +23,20 @@ impl<'a> Proxy<'a> {
         })
     }
 
-    pub async fn send(&self) -> Result<reqwest::StatusCode, Error> {
-        let response = self.client.get(self.target_url).send().await?;
-        Ok(response.status())
+    pub async fn send(&mut self) -> Result<&Self, Error> {
+        self.response = Some(self.client.get(self.target_url).send().await?);
+        Ok(self)
+    }
+
+    pub fn get_proxy_url(&self) -> &str {
+        self.proxy_url
+    }
+
+    pub fn get_status(&self) -> reqwest::StatusCode {
+        self.response.as_ref().unwrap().status()
+    }
+
+    pub async fn get_text(self) -> Result<String, Error> {
+        self.response.unwrap().text().await
     }
 }
