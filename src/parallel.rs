@@ -1,40 +1,54 @@
+use crate::callback::Generator;
 use crate::tester::Proxy;
-use tokio::task;
+use std::sync::Arc;
+use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
-type Callback = fn() -> Option<String>;
-
-pub struct ParallelProxies {
-    address_generator: Callback,
+pub struct ParallelProxies<'a, T: Generator> {
+    generator: &'a mut T,
     tasks: JoinSet<()>,
 }
 
-impl ParallelProxies {
-    const MAX_TASKS: i32 = 100;
-    pub fn new(&mut self, address_generator: Callback) -> Self {
+#[allow(dead_code)]
+#[allow(unused_variables)]
+impl<'a, T: Generator + std::marker::Sync> ParallelProxies<'a, T> {
+    const MAX_TASKS: usize = 100;
+    pub fn new(generator: &'a mut T) -> Self {
         ParallelProxies {
-            address_generator,
+            generator,
             tasks: JoinSet::new(),
         }
     }
+
     async fn process_proxy(address: String) {
         let mut proxy = Proxy::new(address.as_str()).unwrap();
-
-        // TODO: change "unwrap" and handle the error
-        proxy.send().await.unwrap();
-        let status = proxy.get_status();
-    }
-    pub fn get_all(&mut self) -> i32 {
-        let mut i = 0;
-        while let Some(address) = (self.address_generator)() {
-            if Self::MAX_TASKS <= i {
-                break;
+        let response = proxy.send().await;
+        match response {
+            Ok(proxy) => {
+                let status = proxy.get_status();
+                println!("{}", status);
             }
+            Err(error) => {
+                eprintln!("Error occured: {}", error);
+            }
+        };
+    }
+
+    pub async fn get_all(&mut self) {
+        let sem = Arc::new(Semaphore::new(Self::MAX_TASKS));
+
+        while let Some(address) = self.generator.generate_address().await {
+            let permit = Arc::clone(&sem).acquire_owned().await;
             self.tasks.spawn(async move {
+                let _permit = permit;
                 Self::process_proxy(address).await;
             });
-            i += 1;
         }
-        i
+    }
+
+    pub async fn pull_all(&mut self) {
+        while let Some(task) = self.tasks.join_next().await {
+            task.unwrap();
+        }
     }
 }

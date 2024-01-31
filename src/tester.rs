@@ -7,6 +7,7 @@ pub struct Proxy<'a> {
     response: Option<reqwest::Response>,
 }
 
+#[allow(dead_code)]
 impl<'a> Proxy<'a> {
     const DEFAULT_TARGET_URL: &'static str = "https://httpbin.org/ip";
     pub fn new(proxy_url: &'a str) -> Result<Self, Error> {
