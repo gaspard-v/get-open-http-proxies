@@ -1,5 +1,6 @@
 use reqwest::{self, Error};
 
+#[derive(Debug)]
 pub struct Proxy<'a> {
     proxy_url: &'a str,
     target_url: &'a str,

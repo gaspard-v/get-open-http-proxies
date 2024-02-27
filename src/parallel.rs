@@ -4,6 +4,7 @@ use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::task::JoinSet;
 
+#[derive(Debug)]
 pub struct ParallelProxies<'a, T: Generator> {
     generator: &'a mut T,
     tasks: JoinSet<()>,

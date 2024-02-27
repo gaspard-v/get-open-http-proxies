@@ -1,5 +1,6 @@
 use crate::callback::Generator;
 
+#[derive(Debug)]
 pub struct IpGenerator {
     max_iteration: usize,
     current_iteration: usize,
